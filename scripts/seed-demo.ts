@@ -16,7 +16,9 @@ import path from "node:path";
 import * as schema from "../src/db/schema";
 import { eq } from "drizzle-orm";
 
-const dbPath = path.join(process.cwd(), "data", "testschule.db");
+// Respektiert DATABASE_URL — wichtig für E2E-Tests gegen separate DB.
+const rawDb = process.env.DATABASE_URL || "./data/testschule.db";
+const dbPath = path.isAbsolute(rawDb) ? rawDb : path.join(process.cwd(), rawDb);
 const sqlite = new Database(dbPath);
 sqlite.pragma("foreign_keys = ON");
 const db = drizzle(sqlite, { schema });
