@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light dark;
+  /* Brand-Tokens */
+  --brand-50: #f0f9ff;
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+  --brand-700: #0369a1;
+  --brand-grad: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  --warm-grad: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%);
+  --cool-grad: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  /* Schatten */
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
+  --shadow-lift: 0 4px 6px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fafbfc;
+  color: #0f172a;
 }
+
+.dark body {
+  background: #0a0e1a;
+  color: #e2e8f0;
+}
+
+/* iOS PWA: respect safe-area insets so content doesn't slip under notch / home indicator */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Prevent rubber-band scroll bleed on iOS standalone */
+@media (display-mode: standalone) {
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Tap-highlight für mobile besser */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Utility-Klassen für Gradienten */
+.bg-brand-grad { background: var(--brand-grad); }
+.bg-warm-grad { background: var(--warm-grad); }
+.bg-cool-grad { background: var(--cool-grad); }
+.text-brand-grad {
+  background: var(--brand-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-lift { box-shadow: var(--shadow-lift); }
+
+/* Hover-Lift für interaktive Karten */
+.hover-lift {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Sanftes Pulse für Live-Indicator */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.pulse-ring { animation: pulse-ring 2s infinite; }
+
+/* Scroll-Bar dezenter */
+@media (hover: hover) {
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.25);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.45); background-clip: padding-box; }
+}
+
+/* Selektion in Brand-Farbe */
+::selection {
+  background: rgba(14, 165, 233, 0.2);
+  color: inherit;
+}
+
+/* Fade-In für Listen */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in-up 250ms ease-out backwards; }

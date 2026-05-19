@@ -1,0 +1,132 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778615051352,
+      "tag": "0000_broad_purifiers",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778703080158,
+      "tag": "0001_silky_sprite",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778740806302,
+      "tag": "0002_big_husk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778743010639,
+      "tag": "0003_whole_skullbuster",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778828808414,
+      "tag": "0004_cultured_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1778830797497,
+      "tag": "0005_charming_excalibur",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1778835571642,
+      "tag": "0006_mean_malcolm_colcord",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1778836238165,
+      "tag": "0007_spicy_mephisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1778852656581,
+      "tag": "0008_regular_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1778855256688,
+      "tag": "0009_moaning_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1778867035333,
+      "tag": "0010_chemical_liz_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1778949875979,
+      "tag": "0011_confused_gorilla_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1779008482468,
+      "tag": "0012_supreme_fat_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1779025703397,
+      "tag": "0013_romantic_mystique",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1779027061072,
+      "tag": "0014_swift_winter_soldier",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1779039116630,
+      "tag": "0015_overjoyed_surge",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1779046345443,
+      "tag": "0016_parched_punisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1779047780567,
+      "tag": "0017_past_true_believers",
+      "breakpoints": true
+    }
+  ]
+}

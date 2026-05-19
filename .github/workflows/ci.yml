@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Bei mehreren Pushes auf denselben PR: nur den letzten laufen lassen,
+# ältere Runs abbrechen → spart Zeit + GitHub-Action-Minuten.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: TypeScript-Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Check
+        run: npm run typecheck
+
+  build:
+    name: Next.js Build
+    runs-on: ubuntu-latest
+    needs: typecheck
+    env:
+      # Build-Time-Dummies — KEINE echten Secrets!
+      DATABASE_URL: ./data/testschule.db
+      AUTH_SECRET: ci_dummy_secret_64_chars_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      AUTH_TRUST_HOST: "true"
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Init empty DB für Build
+        # Next.js Build importiert src/db/index.ts → better-sqlite3 öffnet die DB-Datei.
+        # Die Datei muss existieren + ein leeres Schema haben, damit der Build durchläuft.
+        run: |
+          mkdir -p data
+          npx drizzle-kit push
+
+      - name: Build
+        run: npm run build
+
+      - name: Build-Artefakt-Größe
+        # Reine Info: wie groß ist der Output? Hilft beim Frühwarn-Wachstum zu sehen.
+        run: |
+          du -sh .next 2>/dev/null || true

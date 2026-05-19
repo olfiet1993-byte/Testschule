@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ===== Projekt-spezifisch =====
+# SQLite-DB mit Nutzerdaten + Passwort-Hashes (niemals committen!)
+/data/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Upload-Verzeichnis (Schüler-Bilder etc.)
+/public/uploads/
+
+# Lokale Preview-/Launch-Konfig
+/.claude/
+
+# Tailscale / Backup
+*.bak
+/backups/
