@@ -6,7 +6,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { AppShell } from "@/components/AppShell";
 import { Card, Badge } from "@/components/ui/Input";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, Users as UsersIcon, ClipboardList, Star, Download, Printer } from "lucide-react";
+import { ArrowLeft, TrendingUp, Users as UsersIcon, ClipboardList, Star, Download, Printer, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { levelTitle } from "@/lib/utils";
 
@@ -119,7 +119,12 @@ export default async function ClassStats({ params }: { params: Promise<{ id: str
         </div>
         <a href={`/api/klassen/${klass.id}/export`} download>
           <Button variant="secondary" size="sm">
-            <Download className="w-4 h-4" /> CSV-Export
+            <Download className="w-4 h-4" /> CSV
+          </Button>
+        </a>
+        <a href={`/api/export/class-stats/${klass.id}`} download>
+          <Button variant="secondary" size="sm">
+            <FileSpreadsheet className="w-4 h-4" /> Excel
           </Button>
         </a>
         <Link href={`/klassen/${klass.id}/notenliste/print`}>
