@@ -37,6 +37,7 @@ export const authConfig = {
       if (path.startsWith("/api/auth")) return true;
       if (path === "/einladung") return true;
       if (path === "/anleitung") return true;
+      if (path === "/tour") return true;
       if (path === "/datenschutz") return true;
       return isAuthed;
     },

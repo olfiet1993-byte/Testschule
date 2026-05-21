@@ -47,21 +47,42 @@ export async function caseToPptx(
   // === Folie 1: Titel ===
   const title = pres.addSlide();
   title.background = { color: BRAND_BG };
+  // Dekorative Schmuckelemente
+  title.addShape(pres.ShapeType.rect, {
+    x: -2, y: -2, w: 5, h: 5,
+    fill: { color: "0284C7", transparency: 70 }, line: { type: "none" },
+    rotate: 30,
+  });
+  title.addShape(pres.ShapeType.rect, {
+    x: 10, y: 4, w: 6, h: 6,
+    fill: { color: "0369A1", transparency: 60 }, line: { type: "none" },
+    rotate: 25,
+  });
+  // Pre-Title-Kicker
+  title.addText("PFLEGE-FALLSTUDIE", {
+    x: 0.5, y: 1.8, w: 12, h: 0.4,
+    fontSize: 14, color: "BAE6FD", bold: true, charSpacing: 4,
+  });
   title.addText(task.title, {
-    x: 0.5, y: 2.5, w: 12, h: 1.5,
-    fontSize: 48, bold: true, color: "FFFFFF", align: "left",
+    x: 0.5, y: 2.4, w: 12, h: 1.8,
+    fontSize: 54, bold: true, color: "FFFFFF", align: "left",
+    fontFace: "Calibri",
   });
   const subline: string[] = [];
   if (options.className) subline.push(options.className);
-  if (task.difficulty) subline.push(["leicht", "mittel", "schwer"][task.difficulty - 1]);
-  subline.push("Fallstudie");
-  title.addText(subline.join("  ·  "), {
-    x: 0.5, y: 4.0, w: 12, h: 0.5,
-    fontSize: 20, color: "DBEAFE", italic: true,
+  if (task.difficulty) subline.push(["🟢 leicht", "🟡 mittel", "🔴 schwer"][task.difficulty - 1]);
+  title.addText(subline.join("    ·    "), {
+    x: 0.5, y: 4.4, w: 12, h: 0.5,
+    fontSize: 22, color: "FFFFFF", italic: true,
   });
-  title.addText("Test Schule · Pflegeausbildung", {
+  // Untere Linie
+  title.addShape(pres.ShapeType.rect, {
+    x: 0.5, y: 6.6, w: 1.2, h: 0.05,
+    fill: { color: "FFFFFF" }, line: { type: "none" },
+  });
+  title.addText("Test Schule  ·  Lernraum für die Pflegeausbildung", {
     x: 0.5, y: 6.8, w: 12, h: 0.3,
-    fontSize: 12, color: "BAE6FD",
+    fontSize: 12, color: "DBEAFE",
   });
 
   // === Folie 2: Fall-Setup ===
@@ -90,14 +111,27 @@ export async function caseToPptx(
     const slide = pres.addSlide();
     slide.background = { color: "FFFFFF" };
 
-    // Header
+    // Header-Band oben
     slide.addShape(pres.ShapeType.rect, {
-      x: 0, y: 0, w: 13.33, h: 0.6,
+      x: 0, y: 0, w: 13.33, h: 0.7,
       fill: { color: BRAND_BG }, line: { type: "none" },
     });
+    // Progress-Indikator: Punkte
+    const dotsStartX = 9.5;
+    for (let d = 0; d < steps.length; d++) {
+      slide.addShape(pres.ShapeType.ellipse, {
+        x: dotsStartX + d * 0.4, y: 0.27, w: 0.16, h: 0.16,
+        fill: { color: d === si ? "FFFFFF" : "BAE6FD" }, line: { type: "none" },
+      });
+    }
     slide.addText(`Schritt ${si + 1} von ${steps.length}`, {
-      x: 0.5, y: 0.05, w: 12, h: 0.5,
-      fontSize: 14, color: "FFFFFF", bold: true,
+      x: 0.5, y: 0.15, w: 8, h: 0.4,
+      fontSize: 14, color: "FFFFFF", bold: true, charSpacing: 2,
+    });
+    // Akzentlinie unter dem Band
+    slide.addShape(pres.ShapeType.rect, {
+      x: 0, y: 0.7, w: 13.33, h: 0.04,
+      fill: { color: "0284C7" }, line: { type: "none" },
     });
 
     // Situation
