@@ -7,10 +7,11 @@ import { Card, Badge } from "@/components/ui/Input";
 import { deleteTask, togglePublishTask, setTaskDueDate, revealTaskAnswers, hideTaskAnswers, duplicateTask } from "@/lib/actions/tasks";
 import { startLiveSession } from "@/lib/actions/live";
 import {
-  ClipboardList, CheckCircle2, Clock, Pencil, Trash2, Eye, EyeOff, Radio, Calendar, X, GraduationCap, Lock, Unlock, Copy,
+  ClipboardList, CheckCircle2, Clock, Pencil, Trash2, Eye, EyeOff, Radio, Calendar, X, GraduationCap, Lock, Unlock, Copy, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DIFFICULTY_LABEL } from "@/components/DifficultySelect";
+import { ExportModal, type ExportFormat } from "@/components/ExportModal";
 
 const typeLabels: Record<string, string> = {
   quiz: "Quiz",
@@ -32,6 +33,7 @@ export function TaskListClient({
   const [pending, start] = useTransition();
   const [dueEditing, setDueEditing] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<any | null>(null);
+  const [exportingTask, setExportingTask] = useState<any | null>(null);
   const router = useRouter();
 
   function formatDue(iso: string | null): { text: string; urgency: "past" | "today" | "soon" | "later" } | null {
@@ -205,6 +207,14 @@ export function TaskListClient({
                 </button>
 
                 <button
+                  onClick={() => setExportingTask(t)}
+                  title="Exportieren (Word/PDF/PPT)"
+                  className="w-9 h-9 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+
+                <button
                   onClick={() => {
                     const subs = subMap[t.id] ?? 0;
                     const msg = subs > 0
@@ -260,6 +270,28 @@ export function TaskListClient({
             </Button>
           </Card>
         </div>
+      )}
+
+      {exportingTask && (
+        <ExportModal
+          open
+          onClose={() => setExportingTask(null)}
+          title={`„${exportingTask.title}" exportieren`}
+          formats={
+            (exportingTask.type === "case_study"
+              ? ["docx", "pptx", "pdf"]
+              : ["docx", "pdf"]) as ExportFormat[]
+          }
+          showSolutionsToggle
+          buildUrl={(format, opts) => {
+            if (format === "pdf") return null;
+            return `/api/export/task/${exportingTask.id}?format=${format}&solutions=${opts.withSolutions}`;
+          }}
+          onPdf={() => {
+            // Druck: lokal Browser-Druckansicht der bearbeiten-Seite öffnen
+            window.open(`/aufgaben/${exportingTask.id}/bearbeiten?print=1`, "_blank");
+          }}
+        />
       )}
     </div>
   );

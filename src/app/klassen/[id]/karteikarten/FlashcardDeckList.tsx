@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, Badge } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { deleteCard } from "@/lib/actions/flashcards";
-import { Layers, ChevronDown, ChevronRight, Trash2, ExternalLink, Sparkles, BookOpen } from "lucide-react";
+import { Layers, ChevronDown, ChevronRight, Trash2, ExternalLink, Sparkles, BookOpen, Printer } from "lucide-react";
 import Link from "next/link";
 
 type Deck = {
@@ -71,16 +71,27 @@ export function FlashcardDeckList({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-          <Layers className="w-6 h-6 text-violet-600" />
+      <div className="flex items-center gap-3 justify-between flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+            <Layers className="w-6 h-6 text-violet-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Karteikarten — {className}</h1>
+            <p className="text-sm text-slate-500">
+              Alle Stapel deiner Klasse · {decks.length} Stapel · {totalCards} Karten · {memberCount} Lernende
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">Karteikarten — {className}</h1>
-          <p className="text-sm text-slate-500">
-            Alle Stapel deiner Klasse · {decks.length} Stapel · {totalCards} Karten · {memberCount} Lernende
-          </p>
-        </div>
+        {decks.length > 0 && (
+          <Link
+            href={`/klassen/${classId}/karteikarten/print`}
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            title="Alle Karten als 4-pro-Seite-PDF drucken"
+          >
+            <Printer className="w-4 h-4" /> Druckansicht
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -158,6 +169,18 @@ export function FlashcardDeckList({
 
                 {open && (
                   <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 p-4">
+                    {dCards.length > 0 && (
+                      <div className="flex justify-end mb-2">
+                        <Link
+                          href={`/klassen/${classId}/karteikarten/print?deck=${d.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-violet-300 transition"
+                          title="Nur diesen Stapel drucken"
+                        >
+                          <Printer className="w-3 h-3" /> Stapel drucken
+                        </Link>
+                      </div>
+                    )}
                     {dCards.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">Stapel ist leer.</p>
                     ) : (
