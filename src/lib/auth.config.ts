@@ -38,6 +38,7 @@ export const authConfig = {
       if (path === "/einladung") return true;
       if (path === "/anleitung") return true;
       if (path === "/tour") return true;
+      if (path.startsWith("/help")) return true;
       if (path === "/datenschutz") return true;
       return isAuthed;
     },

@@ -88,15 +88,15 @@ export function Sidebar() {
             <Lightbulb className="w-4 h-4" /> Ideen & Feedback
           </Link>
           <Link
-            href="/anleitung"
+            href="/help"
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              path?.startsWith("/anleitung")
+              path?.startsWith("/help") || path?.startsWith("/anleitung") || path?.startsWith("/tour")
                 ? "bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300"
                 : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800",
             )}
           >
-            <HelpCircle className="w-4 h-4" /> Anleitung
+            <HelpCircle className="w-4 h-4" /> Hilfe & Anleitung
           </Link>
         </div>
       </nav>
