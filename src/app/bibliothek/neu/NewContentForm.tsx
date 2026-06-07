@@ -117,11 +117,47 @@ export function NewContentForm() {
             </>
           )}
 
-          {(type === "link" || type === "video" || type === "file") && (
+          {(type === "link" || type === "video") && (
             <>
               <div>
                 <Label htmlFor="url">URL</Label>
                 <Input id="url" name="url" type="url" placeholder="https://…" required className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="body">Beschreibung (optional)</Label>
+                <textarea
+                  id="body"
+                  name="body"
+                  rows={2}
+                  className="w-full mt-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sm"
+                />
+              </div>
+            </>
+          )}
+
+          {type === "file" && (
+            <>
+              <div>
+                <Label htmlFor="file">Datei hochladen (PDF, Word, PowerPoint, …)</Label>
+                <input
+                  id="file"
+                  type="file"
+                  name="file"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.txt,.rtf,.csv"
+                  className="mt-1 block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-sky-600 file:text-white hover:file:bg-sky-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Vom Rechner auswählen — max. 20 MB.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <span className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+                oder
+                <span className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+              </div>
+              <div>
+                <Label htmlFor="url">Link zur Datei (statt Upload)</Label>
+                <Input id="url" name="url" type="url" placeholder="https://…" className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="body">Beschreibung (optional)</Label>

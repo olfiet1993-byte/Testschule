@@ -22,12 +22,14 @@ export async function createContentItem(formData: FormData) {
     "text" | "image" | "link" | "term" | "video" | "file";
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim() || null;
-  const url = String(formData.get("url") ?? "").trim() || null;
+  let url = String(formData.get("url") ?? "").trim() || null;
   const tags = String(formData.get("tags") ?? "").trim() || null;
 
   if (!title) throw new Error("Titel fehlt");
 
   let imagePath: string | null = null;
+
+  // Bild-Upload
   if (type === "image") {
     const file = formData.get("image") as File | null;
     if (file && file.size > 0) {
@@ -38,6 +40,28 @@ export async function createContentItem(formData: FormData) {
       const buffer = Buffer.from(await file.arrayBuffer());
       await writeFile(path.join(uploadDir, filename), buffer);
       imagePath = `/uploads/${filename}`;
+    }
+  }
+
+  // Datei-Upload (PDF, Word, PowerPoint …) — Datei ODER Link erlaubt
+  if (type === "file") {
+    const file = formData.get("file") as File | null;
+    if (file && file.size > 0) {
+      const MAX = 20 * 1024 * 1024; // 20 MB
+      if (file.size > MAX) throw new Error("Datei zu groß (max. 20 MB)");
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      await mkdir(uploadDir, { recursive: true });
+      // Original-Namen lesbar behalten, mit kurzem Präfix für Eindeutigkeit
+      const safeName = file.name
+        .replace(/[^\w.\-]+/g, "_")
+        .replace(/_+/g, "_")
+        .slice(-80) || "datei";
+      const filename = `${nanoid(6)}-${safeName}`;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      await writeFile(path.join(uploadDir, filename), buffer);
+      url = `/uploads/${filename}`;
+    } else if (!url) {
+      throw new Error("Bitte eine Datei hochladen oder einen Link angeben");
     }
   }
 
