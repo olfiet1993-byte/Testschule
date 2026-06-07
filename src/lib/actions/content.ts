@@ -27,42 +27,44 @@ export async function createContentItem(formData: FormData) {
 
   if (!title) throw new Error("Titel fehlt");
 
-  let imagePath: string | null = null;
+  const MAX = 50 * 1024 * 1024; // 50 MB
+  const uploadDir = path.join(process.cwd(), "public", "uploads");
 
-  // Bild-Upload
-  if (type === "image") {
-    const file = formData.get("image") as File | null;
-    if (file && file.size > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
-      await mkdir(uploadDir, { recursive: true });
-      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
-      const filename = `${nanoid(10)}.${ext}`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(uploadDir, filename), buffer);
-      imagePath = `/uploads/${filename}`;
-    }
-  }
-
-  // Datei-Upload (PDF, Word, PowerPoint …) — Datei ODER Link erlaubt
-  if (type === "file") {
-    const file = formData.get("file") as File | null;
-    if (file && file.size > 0) {
-      const MAX = 50 * 1024 * 1024; // 50 MB
-      if (file.size > MAX) throw new Error("Datei zu groß (max. 50 MB)");
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
-      await mkdir(uploadDir, { recursive: true });
-      // Original-Namen lesbar behalten, mit kurzem Präfix für Eindeutigkeit
-      const safeName = file.name
+  async function saveUpload(file: File): Promise<string> {
+    if (file.size > MAX) throw new Error("Datei zu groß (max. 50 MB)");
+    await mkdir(uploadDir, { recursive: true });
+    // Original-Namen lesbar behalten, mit kurzem Präfix für Eindeutigkeit
+    const safeName =
+      file.name
         .replace(/[^\w.\-]+/g, "_")
         .replace(/_+/g, "_")
         .slice(-80) || "datei";
-      const filename = `${nanoid(6)}-${safeName}`;
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(uploadDir, filename), buffer);
-      url = `/uploads/${filename}`;
-    } else if (!url) {
-      throw new Error("Bitte eine Datei hochladen oder einen Link angeben");
+    const filename = `${nanoid(6)}-${safeName}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await writeFile(path.join(uploadDir, filename), buffer);
+    return `/uploads/${filename}`;
+  }
+
+  let imagePath: string | null = null;
+
+  // Bild-Typ nutzt das dedizierte "image"-Feld → landet in imagePath
+  if (type === "image") {
+    const file = formData.get("image") as File | null;
+    if (file && file.size > 0) {
+      imagePath = await saveUpload(file);
     }
+  }
+
+  // Lokaler Datei-Upload für ALLE Typen über das "file"-Feld → landet in url.
+  // Bei text/term ist es ein optionaler Anhang, bei link/video/file eine Alternative zum Link.
+  const upload = formData.get("file") as File | null;
+  if (upload && upload.size > 0) {
+    url = await saveUpload(upload);
+  }
+
+  // Pflicht-Quelle prüfen: Link- und Datei-Typ brauchen entweder Upload oder URL
+  if ((type === "link" || type === "video" || type === "file") && !url) {
+    throw new Error("Bitte eine Datei hochladen oder einen Link angeben");
   }
 
   await db.insert(contentItems).values({
