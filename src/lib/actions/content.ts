@@ -47,8 +47,8 @@ export async function createContentItem(formData: FormData) {
   if (type === "file") {
     const file = formData.get("file") as File | null;
     if (file && file.size > 0) {
-      const MAX = 20 * 1024 * 1024; // 20 MB
-      if (file.size > MAX) throw new Error("Datei zu groß (max. 20 MB)");
+      const MAX = 50 * 1024 * 1024; // 50 MB
+      if (file.size > MAX) throw new Error("Datei zu groß (max. 50 MB)");
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadDir, { recursive: true });
       // Original-Namen lesbar behalten, mit kurzem Präfix für Eindeutigkeit

@@ -138,16 +138,15 @@ export function NewContentForm() {
           {type === "file" && (
             <>
               <div>
-                <Label htmlFor="file">Datei hochladen (PDF, Word, PowerPoint, …)</Label>
+                <Label htmlFor="file">Datei hochladen</Label>
                 <input
                   id="file"
                   type="file"
                   name="file"
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.odt,.odp,.ods,.txt,.rtf,.csv"
                   className="mt-1 block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-sky-600 file:text-white hover:file:bg-sky-500"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Vom Rechner auswählen — max. 20 MB.
+                  Alle gängigen Formate (PDF, Word, PowerPoint, Excel, Bilder, Audio, Video, ZIP …) — max. 50 MB.
                 </p>
               </div>
               <div className="flex items-center gap-3 text-xs text-slate-400">
