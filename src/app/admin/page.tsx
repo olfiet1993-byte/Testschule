@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import {
   users, tasks, contentItems, classes, classMembers, submissions, usageDays,
+  feedback, feedbackVotes,
 } from "@/db/schema";
-import { inArray, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { AppShell } from "@/components/AppShell";
 import { AdminClient } from "./AdminClient";
 
@@ -94,6 +95,29 @@ export default async function AdminPage() {
     };
   });
 
+  // Feedback: alle Einträge + Vote-Zahlen + Autoren (für den Bewertungs-Tab)
+  const allFeedback = await db.query.feedback.findMany({
+    orderBy: [desc(feedback.createdAt)],
+  });
+  const allVotes = await db.query.feedbackVotes.findMany();
+  const voteCount: Record<string, number> = {};
+  for (const v of allVotes) {
+    voteCount[v.feedbackId] = (voteCount[v.feedbackId] ?? 0) + 1;
+  }
+  const userById = Object.fromEntries(allUsers.map((u) => [u.id, u]));
+  const feedbackRows = allFeedback.map((f) => ({
+    id: f.id,
+    type: f.type,
+    title: f.title,
+    body: f.body,
+    status: f.status,
+    response: f.response ?? null,
+    votes: voteCount[f.id] ?? 0,
+    authorName: userById[f.userId]?.displayName ?? "Unbekannt",
+    authorRole: userById[f.userId]?.role ?? "student",
+    createdAt: new Date(f.createdAt).getTime(),
+  }));
+
   // Kopf-Statistiken
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -114,6 +138,7 @@ export default async function AdminPage() {
         stats={stats}
         teachers={JSON.parse(JSON.stringify(teacherRows))}
         students={JSON.parse(JSON.stringify(studentRows))}
+        feedback={JSON.parse(JSON.stringify(feedbackRows))}
       />
     </AppShell>
   );

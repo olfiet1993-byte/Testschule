@@ -6,6 +6,7 @@ import {
   ShieldCheck, GraduationCap, Users, Clock, ClipboardList, TrendingUp,
   Search, Star, Flame, Library,
 } from "lucide-react";
+import { AdminFeedbackPanel, type AdminFeedbackRow } from "./AdminFeedbackPanel";
 
 type TeacherRow = {
   id: string;
@@ -65,6 +66,7 @@ export function AdminClient({
   stats,
   teachers,
   students,
+  feedback,
 }: {
   stats: {
     teachers: number;
@@ -76,9 +78,11 @@ export function AdminClient({
   };
   teachers: TeacherRow[];
   students: StudentRow[];
+  feedback: AdminFeedbackRow[];
 }) {
-  const [tab, setTab] = useState<"teachers" | "students">("teachers");
+  const [tab, setTab] = useState<"teachers" | "students" | "feedback">("teachers");
   const [filter, setFilter] = useState("");
+  const openFeedback = feedback.filter((f) => f.status === "open").length;
 
   const filteredTeachers = useMemo(() => {
     const q = filter.toLowerCase();
@@ -144,16 +148,34 @@ export function AdminClient({
           >
             🎓 Schüler:innen ({students.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("feedback")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition relative ${
+              tab === "feedback"
+                ? "bg-white dark:bg-slate-900 shadow text-sky-600 dark:text-sky-400"
+                : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            💡 Feedback ({feedback.length})
+            {openFeedback > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {openFeedback}
+              </span>
+            )}
+          </button>
         </div>
-        <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Suchen…"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {tab !== "feedback" && (
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Suchen…"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        )}
       </div>
 
       {/* Lehrkräfte-Tabelle */}
@@ -266,10 +288,15 @@ export function AdminClient({
         </Card>
       )}
 
-      <p className="text-xs text-slate-400">
-        Nutzungsdauer = Minuten mit geöffnetem, sichtbarem App-Tab (1-Minuten-Auflösung).
-        Erfasst seit Aktivierung des Trackings — ältere Aktivität erscheint nur unter „Zuletzt aktiv".
-      </p>
+      {/* Feedback-Bewertung */}
+      {tab === "feedback" && <AdminFeedbackPanel items={feedback} />}
+
+      {tab !== "feedback" && (
+        <p className="text-xs text-slate-400">
+          Nutzungsdauer = Minuten mit geöffnetem, sichtbarem App-Tab (1-Minuten-Auflösung).
+          Erfasst seit Aktivierung des Trackings — ältere Aktivität erscheint nur unter „Zuletzt aktiv".
+        </p>
+      )}
     </div>
   );
 }

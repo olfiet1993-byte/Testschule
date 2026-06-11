@@ -17,7 +17,7 @@ async function requireUser() {
 
 async function requireTeacher() {
   const u = await requireUser();
-  if (u.role !== "teacher") throw new Error("Nur Lehrkräfte");
+  if (u.role !== "teacher" && u.role !== "admin") throw new Error("Nur Lehrkräfte oder Admins");
   return u;
 }
 
@@ -96,7 +96,7 @@ export async function deleteFeedback(feedbackId: string) {
   const fb = await db.query.feedback.findFirst({ where: eq(feedback.id, feedbackId) });
   if (!fb) throw new Error("Feedback nicht gefunden");
   // Eigentümer oder Lehrkraft darf löschen
-  if (fb.userId !== user.id && user.role !== "teacher") {
+  if (fb.userId !== user.id && user.role !== "teacher" && user.role !== "admin") {
     throw new Error("Keine Berechtigung");
   }
   await db.delete(feedback).where(eq(feedback.id, feedbackId));
