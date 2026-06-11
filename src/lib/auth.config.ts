@@ -29,7 +29,8 @@ export const authConfig = {
       const isAuthed = !!auth?.user;
       if (path === "/login") {
         if (isAuthed) {
-          const target = (auth?.user as any)?.role === "teacher" ? "/dashboard" : "/sus";
+          const role = (auth?.user as any)?.role;
+          const target = role === "admin" ? "/admin" : role === "teacher" ? "/dashboard" : "/sus";
           return Response.redirect(new URL(target, request.nextUrl));
         }
         return true;

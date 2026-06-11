@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Home, Users, BookOpen, Library, ClipboardList, LogOut, GraduationCap, User, MessageCircle, Building2, Mail, CalendarDays, History, Lightbulb, HelpCircle, Layers, BookX, Activity, Brain, Share2,
+  Home, Users, BookOpen, Library, ClipboardList, LogOut, GraduationCap, User, MessageCircle, Building2, Mail, CalendarDays, History, Lightbulb, HelpCircle, Layers, BookX, Activity, Brain, Share2, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/Avatar";
@@ -34,11 +34,15 @@ const studentNav = [
   { href: "/profil", label: "Mein Profil", icon: User },
 ];
 
+const adminNav = [
+  { href: "/admin", label: "Admin-Übersicht", icon: ShieldCheck },
+];
+
 export function Sidebar() {
   const path = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const nav = role === "teacher" ? teacherNav : studentNav;
+  const nav = role === "admin" ? adminNav : role === "teacher" ? teacherNav : studentNav;
 
   return (
     <aside className="w-64 hidden md:flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-r border-slate-200/70 dark:border-slate-800 h-screen sticky top-0">
@@ -120,7 +124,7 @@ export function Sidebar() {
           )}
           <div className="min-w-0">
             <div className="text-sm font-medium truncate">{session?.user?.displayName ?? "—"}</div>
-            <div className="text-xs text-slate-500">{role === "teacher" ? "Lehrkraft" : "Schüler:in"}</div>
+            <div className="text-xs text-slate-500">{role === "admin" ? "Admin" : role === "teacher" ? "Lehrkraft" : "Schüler:in"}</div>
           </div>
         </Link>
         <button
@@ -154,7 +158,7 @@ export function MobileTopBar() {
         <div>
           <div className="font-bold text-sm leading-tight">Test Schule</div>
           <div className="text-[10px] text-slate-500 leading-tight">
-            {session?.user?.role === "teacher" ? "Lehrkraft" : "Schüler:in"}
+            {session?.user?.role === "admin" ? "Admin" : session?.user?.role === "teacher" ? "Lehrkraft" : "Schüler:in"}
           </div>
         </div>
       </div>

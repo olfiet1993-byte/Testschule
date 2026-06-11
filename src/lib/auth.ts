@@ -3,14 +3,14 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users, classes, classMembers } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { authConfig } from "./auth.config";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: "teacher" | "student";
+      role: "teacher" | "student" | "admin";
       schoolId: string;
       displayName: string;
     } & DefaultSession["user"];
@@ -32,7 +32,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = String(creds?.password ?? "");
         if (!email || !password) return null;
         const user = await db.query.users.findFirst({
-          where: and(eq(users.email, email), eq(users.role, "teacher")),
+          where: and(eq(users.email, email), inArray(users.role, ["teacher", "admin"])),
         });
         if (!user?.passwordHash) return null;
         const ok = await bcrypt.compare(password, user.passwordHash);
