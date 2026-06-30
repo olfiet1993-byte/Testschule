@@ -17,6 +17,7 @@ import { agentTasks } from "@/db/schema";
 import { eq, and, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { runDevAgent } from "./dev-agent";
+import { runContentAgent } from "./content-agent";
 
 // ─── Typen ───────────────────────────────────────────────────────────────────
 
@@ -98,7 +99,23 @@ export async function runOrchestrator(options: { intervalMs?: number } = {}) {
   const interval = options.intervalMs ?? 30_000; // alle 30 Sekunden prüfen
   console.log(`[Orchestrator] Gestartet. Prüfe alle ${interval / 1000}s auf neue Tasks.`);
 
+  // Content-Agent täglich einmal ausführen
+  let lastContentAgentRun = 0;
+  const CONTENT_AGENT_INTERVAL = 24 * 60 * 60 * 1000; // 24h
+
   while (true) {
+    // Content-Agent: täglich neue Tasks erkennen
+    if (Date.now() - lastContentAgentRun > CONTENT_AGENT_INTERVAL) {
+      try {
+        console.log("[Orchestrator] Starte Content-Agent Analyse...");
+        const result = await runContentAgent();
+        lastContentAgentRun = Date.now();
+        console.log(`[Orchestrator] Content-Agent: ${result.tasksQueued} neue Tasks erkannt.`);
+      } catch (err) {
+        console.error("[Orchestrator] Content-Agent Fehler:", err);
+      }
+    }
+
     const task = await getNextTask();
 
     if (!task) {
