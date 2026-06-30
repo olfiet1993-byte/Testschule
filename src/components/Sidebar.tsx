@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Home, Users, BookOpen, Library, ClipboardList, LogOut, GraduationCap, User, MessageCircle, Building2, Mail, CalendarDays, History, Lightbulb, HelpCircle, Layers, BookX, Activity, Brain, Share2, ShieldCheck,
+  Home, Users, BookOpen, Library, ClipboardList, LogOut, GraduationCap, User, MessageCircle, Building2, Mail, CalendarDays, History, Lightbulb, HelpCircle, Layers, BookX, Activity, Brain, Share2, ShieldCheck, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/Avatar";
@@ -36,6 +36,7 @@ const studentNav = [
 
 const adminNav = [
   { href: "/admin", label: "Admin-Übersicht", icon: ShieldCheck },
+  { href: "/admin/ki", label: "KI & Agenten", icon: Zap },
 ];
 
 export function Sidebar() {
