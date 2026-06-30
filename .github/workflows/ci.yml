@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +23,13 @@ jobs:
 
       - name: TypeScript check
         run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint:ci
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+        continue-on-error: true   # warnen, nicht blocken (bei öffentlichen Paketen viele FP)
 
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
