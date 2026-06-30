@@ -8,10 +8,12 @@ import { deleteTask, togglePublishTask, setTaskDueDate, revealTaskAnswers, hideT
 import { startLiveSession } from "@/lib/actions/live";
 import {
   ClipboardList, CheckCircle2, Clock, Pencil, Trash2, Eye, EyeOff, Radio, Calendar, X, GraduationCap, Lock, Unlock, Copy, Download,
+  Sparkles, ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DIFFICULTY_LABEL } from "@/components/DifficultySelect";
 import { ExportModal, type ExportFormat } from "@/components/ExportModal";
+import { AiReviewModal } from "@/components/AiReviewModal";
 
 const typeLabels: Record<string, string> = {
   quiz: "Quiz",
@@ -34,6 +36,7 @@ export function TaskListClient({
   const [dueEditing, setDueEditing] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState<any | null>(null);
   const [exportingTask, setExportingTask] = useState<any | null>(null);
+  const [reviewingTask, setReviewingTask] = useState<any | null>(null);
   const router = useRouter();
 
   function formatDue(iso: string | null): { text: string; urgency: "past" | "today" | "soon" | "later" } | null {
@@ -49,11 +52,33 @@ export function TaskListClient({
     return { text, urgency: "later" };
   }
 
+  function handlePublishClick(t: any) {
+    // Bereits veröffentlicht → einfach toggle (zurücknehmen braucht kein Review)
+    if (t.publishedAt) {
+      start(async () => {
+        try { await togglePublishTask(t.id); router.refresh(); }
+        catch (e: any) { alert(e.message); }
+      });
+      return;
+    }
+    // KI-generiert ohne Review → Review-Modal öffnen
+    if (t.aiGenerated && !t.reviewedAt) {
+      setReviewingTask(t);
+      return;
+    }
+    // Normal veröffentlichen
+    start(async () => {
+      try { await togglePublishTask(t.id); router.refresh(); }
+      catch (e: any) { alert(e.message); }
+    });
+  }
+
   return (
     <div className="space-y-3">
       {tasks.map((t) => {
         const klass = classMap[t.classId];
         const published = !!t.publishedAt;
+        const needsReview = t.aiGenerated && !t.reviewedAt && !published;
         const dueInfo = formatDue(t.dueAt ?? null);
         const dueColors = {
           past: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
@@ -62,13 +87,18 @@ export function TaskListClient({
           later: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
         };
         return (
-          <Card key={t.id} className="!py-4 hover:shadow-md transition">
+          <Card key={t.id} className={`!py-4 hover:shadow-md transition ${needsReview ? "ring-2 ring-amber-400 dark:ring-amber-500/60" : ""}`}>
             <div className="flex items-start gap-3 min-w-0">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 relative"
                 style={{ background: (klass?.color ?? "#888") + "33", color: klass?.color ?? "#888" }}
               >
                 <ClipboardList className="w-5 h-5" />
+                {t.aiGenerated && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center" title="KI-generiert">
+                    <Sparkles className="w-2.5 h-2.5 text-white" />
+                  </span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold break-words">{t.title}</div>
@@ -96,6 +126,23 @@ export function TaskListClient({
                     </Badge>
                   )}
                 </div>
+
+                {/* KI-Review-Banner */}
+                {needsReview && (
+                  <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700">
+                    <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+                      KI-Inhalt — Prüfung erforderlich vor Veröffentlichung
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setReviewingTask(t)}
+                      className="ml-auto text-xs font-semibold text-amber-700 dark:text-amber-300 hover:underline whitespace-nowrap"
+                    >
+                      Jetzt prüfen →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -135,8 +182,12 @@ export function TaskListClient({
                 <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                   <CheckCircle2 className="w-3 h-3 inline mr-1" /> veröffentlicht
                 </Badge>
-              ) : (
+              ) : needsReview ? (
                 <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  <ShieldAlert className="w-3 h-3 inline mr-1" /> Prüfung ausstehend
+                </Badge>
+              ) : (
+                <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   <Clock className="w-3 h-3 inline mr-1" /> Entwurf
                 </Badge>
               )}
@@ -181,12 +232,16 @@ export function TaskListClient({
                 </button>
 
                 <button
-                  onClick={() => start(() => { togglePublishTask(t.id); })}
+                  onClick={() => handlePublishClick(t)}
                   disabled={pending}
-                  title={published ? "Veröffentlichung zurücknehmen" : "Veröffentlichen"}
-                  className="w-9 h-9 inline-flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                  title={published ? "Veröffentlichung zurücknehmen" : needsReview ? "Prüfung erforderlich" : "Veröffentlichen"}
+                  className={`w-9 h-9 inline-flex items-center justify-center rounded-lg transition
+                    ${needsReview
+                      ? "hover:bg-amber-50 dark:hover:bg-amber-900/30 text-amber-500"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
+                    }`}
                 >
-                  {published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {published ? <EyeOff className="w-4 h-4" /> : needsReview ? <ShieldAlert className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
 
                 <Link
@@ -233,6 +288,25 @@ export function TaskListClient({
           </Card>
         );
       })}
+
+      {/* Review-Modal für KI-generierte Aufgaben */}
+      {reviewingTask && (
+        <AiReviewModal
+          taskId={reviewingTask.id}
+          taskTitle={reviewingTask.title}
+          taskType={reviewingTask.type}
+          payload={reviewingTask.payload}
+          onClose={() => setReviewingTask(null)}
+          onApproved={() => {
+            setReviewingTask(null);
+            // Nach Review direkt veröffentlichen
+            start(async () => {
+              try { await togglePublishTask(reviewingTask.id); router.refresh(); }
+              catch (e: any) { alert(e.message); }
+            });
+          }}
+        />
+      )}
 
       {duplicating && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -288,7 +362,6 @@ export function TaskListClient({
             return `/api/export/task/${exportingTask.id}?format=${format}&solutions=${opts.withSolutions}`;
           }}
           onPdf={() => {
-            // Druck: lokal Browser-Druckansicht der bearbeiten-Seite öffnen
             window.open(`/aufgaben/${exportingTask.id}/bearbeiten?print=1`, "_blank");
           }}
         />

@@ -76,6 +76,7 @@ export async function createQuizTask(input: {
   xpReward: number;
   questions: QuizPayload["questions"];
   publish: boolean;
+  aiGenerated?: boolean;
   examMode?: boolean;
   timeLimitMinutes?: number | null;
   difficulty?: number | null;
@@ -100,12 +101,15 @@ export async function createQuizTask(input: {
     description: input.description?.trim() || null,
     payload: JSON.stringify(payload),
     xpReward: input.xpReward,
-    publishedAt: input.publish ? new Date() : null,
+    // KI-generierte Tasks niemals direkt veröffentlichen — erst nach Review
+    publishedAt: (input.publish && !input.aiGenerated) ? new Date() : null,
     examMode: input.examMode ?? false,
     timeLimitMinutes: input.timeLimitMinutes ?? null,
     difficulty: input.difficulty ?? null,
     curriculumUnitId: input.curriculumUnitId ?? null,
     sharedInSchool: input.sharedInSchool ?? false,
+    aiGenerated: input.aiGenerated ?? false,
+    reviewedAt: null,
   }).returning();
 
   revalidatePath("/aufgaben");
@@ -129,10 +133,35 @@ export async function deleteTask(taskId: string) {
   }
 }
 
+/**
+ * Lehrkraft bestätigt KI-generierten Inhalt nach eigenem Review.
+ * Setzt reviewedAt — erst danach ist Veröffentlichung möglich.
+ */
+export async function reviewTask(taskId: string) {
+  const me = await teacher();
+  const t = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
+  if (!t) throw new Error("Aufgabe nicht gefunden");
+  if (t.authorId !== me.id) throw new Error("Keine Berechtigung");
+  if (!t.aiGenerated) throw new Error("Aufgabe wurde nicht KI-generiert");
+
+  await db.update(tasks)
+    .set({ reviewedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+
+  revalidatePath("/aufgaben");
+  revalidatePath(`/aufgaben/${taskId}/bearbeiten`);
+}
+
 export async function togglePublishTask(taskId: string) {
   const me = await teacher();
   const t = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
   if (!t) throw new Error("Aufgabe nicht gefunden");
+
+  // KI-Guard: erst prüfen, dann veröffentlichen
+  if (t.aiGenerated && !t.reviewedAt) {
+    throw new Error("KI_REVIEW_REQUIRED");
+  }
+
   const willBePublished = !t.publishedAt;
   await db.update(tasks)
     .set({ publishedAt: willBePublished ? new Date() : null })
@@ -182,7 +211,10 @@ export async function publishTasks(input: { taskIds: string[] }): Promise<{ publ
   // Nur unveröffentlichte + nur eigene Klassen
   const myClasses = await db.query.classes.findMany({ where: eq(classes.teacherId, me.id) });
   const myClassIds = new Set(myClasses.map((c) => c.id));
-  const toPublish = candidates.filter((t) => !t.publishedAt && myClassIds.has(t.classId));
+  // KI-Guard: KI-generierte ohne Review herausfiltern
+  const toPublish = candidates.filter(
+    (t) => !t.publishedAt && myClassIds.has(t.classId) && !(t.aiGenerated && !t.reviewedAt),
+  );
   if (toPublish.length === 0) return { published: 0 };
 
   const now = new Date();
@@ -446,6 +478,7 @@ export async function createFlashcardTask(input: {
   xpReward: number;
   cards: FlashcardPayload["cards"];
   publish: boolean;
+  aiGenerated?: boolean;
   examMode?: boolean;
   timeLimitMinutes?: number | null;
   difficulty?: number | null;
@@ -467,12 +500,14 @@ export async function createFlashcardTask(input: {
     description: input.description?.trim() || null,
     payload: JSON.stringify(payload),
     xpReward: input.xpReward,
-    publishedAt: input.publish ? new Date() : null,
+    publishedAt: (input.publish && !input.aiGenerated) ? new Date() : null,
     examMode: input.examMode ?? false,
     timeLimitMinutes: input.timeLimitMinutes ?? null,
     difficulty: input.difficulty ?? null,
     curriculumUnitId: input.curriculumUnitId ?? null,
     sharedInSchool: input.sharedInSchool ?? false,
+    aiGenerated: input.aiGenerated ?? false,
+    reviewedAt: null,
   }).returning();
   revalidatePath("/aufgaben");
   revalidatePath(`/klassen/${input.classId}`);
@@ -546,6 +581,7 @@ export async function createClozeTask(input: {
   text: string;
   blanks: ClozePayload["blanks"];
   publish: boolean;
+  aiGenerated?: boolean;
   examMode?: boolean;
   timeLimitMinutes?: number | null;
   difficulty?: number | null;
@@ -569,12 +605,14 @@ export async function createClozeTask(input: {
     description: input.description?.trim() || null,
     payload: JSON.stringify(payload),
     xpReward: input.xpReward,
-    publishedAt: input.publish ? new Date() : null,
+    publishedAt: (input.publish && !input.aiGenerated) ? new Date() : null,
     examMode: input.examMode ?? false,
     timeLimitMinutes: input.timeLimitMinutes ?? null,
     difficulty: input.difficulty ?? null,
     curriculumUnitId: input.curriculumUnitId ?? null,
     sharedInSchool: input.sharedInSchool ?? false,
+    aiGenerated: input.aiGenerated ?? false,
+    reviewedAt: null,
   }).returning();
   revalidatePath("/aufgaben");
   revalidatePath(`/klassen/${input.classId}`);
@@ -640,6 +678,7 @@ export async function createCaseTask(input: {
   intro: string;
   steps: CaseStudyPayload["steps"];
   publish: boolean;
+  aiGenerated?: boolean;
   examMode?: boolean;
   timeLimitMinutes?: number | null;
   difficulty?: number | null;
@@ -663,12 +702,14 @@ export async function createCaseTask(input: {
     description: input.description?.trim() || null,
     payload: JSON.stringify(payload),
     xpReward: input.xpReward,
-    publishedAt: input.publish ? new Date() : null,
+    publishedAt: (input.publish && !input.aiGenerated) ? new Date() : null,
     examMode: input.examMode ?? false,
     timeLimitMinutes: input.timeLimitMinutes ?? null,
     difficulty: input.difficulty ?? null,
     curriculumUnitId: input.curriculumUnitId ?? null,
     sharedInSchool: input.sharedInSchool ?? false,
+    aiGenerated: input.aiGenerated ?? false,
+    reviewedAt: null,
   }).returning();
   revalidatePath("/aufgaben");
   revalidatePath(`/klassen/${input.classId}`);

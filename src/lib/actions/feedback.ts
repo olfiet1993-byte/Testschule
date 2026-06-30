@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { feedback, feedbackVotes, users } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { classifyAndQueueFeedback, approveFeatureForAgent } from "@/lib/agent/feedback-classifier";
 
 type FeedbackType = "idea" | "bug" | "question" | "other";
 type FeedbackStatus = "open" | "planned" | "in_progress" | "done" | "wontfix";
@@ -49,6 +50,12 @@ export async function submitFeedback(input: {
   });
 
   revalidatePath("/feedback");
+
+  // KI-Klassifikation fire-and-forget (blockiert den User nicht)
+  classifyAndQueueFeedback(ids[0].id).catch((err) =>
+    console.error("[Feedback] Klassifikation fehlgeschlagen:", err),
+  );
+
   return ids[0].id;
 }
 
@@ -88,6 +95,27 @@ export async function updateFeedbackStatus(input: {
     patch.respondedAt = new Date();
   }
   await db.update(feedback).set(patch).where(eq(feedback.id, input.feedbackId));
+  revalidatePath("/feedback");
+}
+
+// Admin: Feature-Anfrage zur Umsetzung durch Dev-Agent freigeben
+export async function approveAndImplementFeedback(feedbackId: string) {
+  const u = await requireUser();
+  if (u.role !== "admin") throw new Error("Nur Admins");
+  const taskId = await approveFeatureForAgent(feedbackId);
+  revalidatePath("/feedback");
+  revalidatePath("/admin/ki");
+  return taskId;
+}
+
+// Admin: Feedback ablehnen
+export async function rejectFeedback(feedbackId: string) {
+  const u = await requireUser();
+  if (u.role !== "admin") throw new Error("Nur Admins");
+  await db.update(feedback).set({
+    adminApproved: -1,
+    status: "wontfix",
+  }).where(eq(feedback.id, feedbackId));
   revalidatePath("/feedback");
 }
 

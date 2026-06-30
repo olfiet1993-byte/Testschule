@@ -7,6 +7,12 @@ import { logTokenUsage, scrubPrompt } from "@/lib/ai/tokenLogger";
 
 type TaskType = "quiz" | "cloze" | "flashcards" | "case_study";
 
+// ─── Modell-Konstanten ────────────────────────────────────────────────────────
+// Sonnet: Dokument-Analyse, komplexe Aufgaben-Generierung (Qualität > Kosten)
+// Haiku:  Kurze Hilfsaufgaben (Distraktoren, Erklärungen, Klassifikation)
+const MODEL_QUALITY = "claude-sonnet-4-6";        // Aufgaben aus Quellen
+const MODEL_FAST    = "claude-haiku-4-5-20251001"; // Hilfs-Calls
+
 function parseClaudeJson(text: string): any {
   let jsonText = text.trim();
   const fenceMatch = jsonText.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
@@ -28,7 +34,7 @@ async function postClaude(
       "Kein ANTHROPIC_API_KEY in .env.local. Lege die Variable an (claude.com/settings/keys), starte den Server neu und versuch es nochmal."
     );
   }
-  const model = body.model ?? "claude-haiku-4-5-20251001";
+  const model = body.model ?? MODEL_FAST;
   const startTime = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -62,10 +68,11 @@ async function postClaude(
 async function callClaude(
   prompt: string,
   maxTokens = 2000,
-  meta?: { callType?: string; classId?: string | null }
+  meta?: { callType?: string; classId?: string | null },
+  model = MODEL_FAST
 ): Promise<any> {
   const { text: cleanPrompt } = scrubPrompt(prompt);
-  const text = await postClaude({ max_tokens: maxTokens, messages: [{ role: "user", content: cleanPrompt }] }, meta);
+  const text = await postClaude({ model, max_tokens: maxTokens, messages: [{ role: "user", content: cleanPrompt }] }, meta);
   return parseClaudeJson(text);
 }
 
@@ -73,7 +80,7 @@ async function callClaude(
  * Sendet einen Vision-Request mit einem lokalen Bild aus /public/uploads.
  * Erwartet imagePath im DB-Format (z. B. "/uploads/abc.jpg").
  */
-async function callClaudeWithImage(prompt: string, imagePath: string, maxTokens = 2500): Promise<any> {
+async function callClaudeWithImage(prompt: string, imagePath: string, maxTokens = 2500, model = MODEL_QUALITY): Promise<any> {
   if (!imagePath.startsWith("/uploads/")) throw new Error("Ungültiger Bildpfad");
   const filename = imagePath.replace(/^\/uploads\//, "");
   if (filename.includes("..") || filename.includes("/")) throw new Error("Ungültiger Bildpfad");
@@ -87,6 +94,7 @@ async function callClaudeWithImage(prompt: string, imagePath: string, maxTokens 
     "image/jpeg";
   const base64 = buf.toString("base64");
   const text = await postClaude({
+    model,
     max_tokens: maxTokens,
     messages: [{
       role: "user",
@@ -135,7 +143,7 @@ export async function generateTaskWithAI(input: {
   if (!input.topic.trim()) throw new Error("Thema fehlt");
   const count = Math.min(Math.max(input.count ?? 5, 1), 10);
   const diff = input.difficulty ?? "mittel";
-  return await callClaude(PROMPTS[input.type](input.topic.trim(), count, diff), 2000, { callType: "quiz_generate" });
+  return await callClaude(PROMPTS[input.type](input.topic.trim(), count, diff), 2000, { callType: "quiz_generate" }, MODEL_QUALITY);
 }
 
 /**
@@ -163,7 +171,7 @@ ${input.contentBody.trim()}
 ${basePrompt}
 
 WICHTIG: Verwende ausschließlich Informationen, die im Lerntext stehen. Keine Halluzinationen.`;
-  return await callClaude(prompt, 2500, { callType: "task_derive" });
+  return await callClaude(prompt, 2500, { callType: "task_derive" }, MODEL_QUALITY);
 }
 
 /**
@@ -280,7 +288,7 @@ WICHTIG:
 - Arbeite ausschließlich mit der vorhandenen Beschreibung + dem im Titel/URL erkennbaren Themengebiet
 - Wenn die Beschreibung dünn ist, formuliere allgemeinere Pflege-Fragen rund um das Thema
 - Keine konkreten Zahlen/Zitate aus dem nicht-bekannten Link-Inhalt erfinden`;
-  return await callClaude(prompt, 2500);
+  return await callClaude(prompt, 2500, { callType: "task_derive" }, MODEL_QUALITY);
 }
 
 /**

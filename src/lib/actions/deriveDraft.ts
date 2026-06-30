@@ -137,6 +137,8 @@ export async function deriveDraftFromContent(input: {
     examMode: false,
     difficulty: 2,
     createdAt: new Date(),
+    aiGenerated: true,
+    reviewedAt: null,
   }).returning();
 
   revalidatePath("/aufgaben");

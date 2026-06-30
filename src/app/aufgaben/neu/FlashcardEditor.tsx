@@ -29,6 +29,7 @@ export function FlashcardEditor({ classes, library, topics, curriculum = [], tas
   const [curriculumUnitId, setCurriculumUnitId] = useState<string | null>(task?.curriculumUnitId ?? null);
   const [sharedInSchool, setSharedInSchool] = useState<boolean>(!!task?.sharedInSchool);
   const isEdit = !!task;
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   const terms = useMemo(() => library.filter((l) => l.type === "term"), [library]);
 
@@ -60,7 +61,7 @@ export function FlashcardEditor({ classes, library, topics, curriculum = [], tas
       } else {
         await createFlashcardTask({
           classId, topicId, title, description, xpReward, cards: cleaned, publish,
-          curriculumUnitId, sharedInSchool,
+          curriculumUnitId, sharedInSchool, aiGenerated,
         });
       }
       router.push("/aufgaben");
@@ -136,6 +137,7 @@ export function FlashcardEditor({ classes, library, topics, curriculum = [], tas
                 front: String(c.front ?? ""),
                 back: String(c.back ?? ""),
               })));
+              setAiGenerated(true);
             }
           }}
         />

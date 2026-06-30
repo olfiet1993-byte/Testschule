@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const tasks = await db
     .select()
     .from(schema.agentTasks)
-    .where(status ? eq(schema.agentTasks.status, status) : undefined)
+    .where(status ? eq(schema.agentTasks.status, status as "pending" | "in_progress" | "success" | "failed" | "escalated") : undefined)
     .orderBy(desc(schema.agentTasks.createdAt))
     .limit(50);
 

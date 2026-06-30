@@ -116,6 +116,12 @@ export default async function AdminPage() {
     authorName: userById[f.userId]?.displayName ?? "Unbekannt",
     authorRole: userById[f.userId]?.role ?? "student",
     createdAt: new Date(f.createdAt).getTime(),
+    // KI-Klassifikation
+    aiClassification: (f as any).aiClassification ?? null,
+    aiConfidence: (f as any).aiConfidence ?? null,
+    aiReasoning: (f as any).aiReasoning ?? null,
+    agentTaskId: (f as any).agentTaskId ?? null,
+    adminApproved: (f as any).adminApproved ?? 0,
   }));
 
   // Kopf-Statistiken

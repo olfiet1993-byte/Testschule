@@ -123,6 +123,9 @@ export const tasks = sqliteTable("tasks", {
   sharedInSchool: integer("shared_in_school", { mode: "boolean" }).notNull().default(false),
   clonedFromTaskId: text("cloned_from_task_id"),
   createdAt: ts("created_at").notNull(),
+  // KI-Review
+  aiGenerated: integer("ai_generated", { mode: "boolean" }).default(false),
+  reviewedAt: ts("reviewed_at"), // null = Prüfung ausstehend, Datum = freigegeben
 });
 
 export const submissions = sqliteTable("submissions", {
@@ -356,6 +359,12 @@ export const feedback = sqliteTable("feedback", {
   respondedBy: text("responded_by").references(() => users.id, { onDelete: "set null" }),
   respondedAt: ts("responded_at"),
   createdAt: ts("created_at").notNull(),
+  // KI-Klassifikation
+  aiClassification: text("ai_classification"),  // 'bug' | 'feature' | 'noise'
+  aiConfidence: real("ai_confidence"),
+  aiReasoning: text("ai_reasoning"),
+  agentTaskId: text("agent_task_id"),
+  adminApproved: integer("admin_approved").default(0), // 0=offen, 1=bestätigt, -1=abgelehnt
 });
 
 export const feedbackVotes = sqliteTable(

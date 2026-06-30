@@ -50,6 +50,7 @@ export function ClozeEditor({ classes, topics, curriculum = [], task }: { classe
   const [curriculumUnitId, setCurriculumUnitId] = useState<string | null>(task?.curriculumUnitId ?? null);
   const [sharedInSchool, setSharedInSchool] = useState<boolean>(!!task?.sharedInSchool);
   const isEdit = !!task;
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   const blankCount = parseBlanks(text);
 
@@ -138,7 +139,7 @@ export function ClozeEditor({ classes, topics, curriculum = [], task }: { classe
         await createClozeTask({
           classId, topicId, title, description, xpReward, text, blanks: cleaned, publish,
           examMode, timeLimitMinutes, difficulty,
-          curriculumUnitId, sharedInSchool,
+          curriculumUnitId, sharedInSchool, aiGenerated,
         });
       }
       router.push("/aufgaben");
@@ -205,6 +206,7 @@ export function ClozeEditor({ classes, topics, curriculum = [], task }: { classe
                 caseSensitive: !!b.caseSensitive,
               })));
             }
+            if (r?.text || r?.blanks) setAiGenerated(true);
           }}
         />
       </div>

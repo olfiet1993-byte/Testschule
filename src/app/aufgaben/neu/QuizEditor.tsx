@@ -46,6 +46,7 @@ export function QuizEditor({ classes, topics, curriculum = [], task }: { classes
   const [curriculumUnitId, setCurriculumUnitId] = useState<string | null>(task?.curriculumUnitId ?? null);
   const [sharedInSchool, setSharedInSchool] = useState<boolean>(!!task?.sharedInSchool);
   const isEdit = !!task;
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   function updateQ(i: number, patch: Partial<Question>) {
     setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
@@ -137,6 +138,7 @@ export function QuizEditor({ classes, topics, curriculum = [], task }: { classes
         await createQuizTask({
           classId, topicId, title, description, xpReward, questions, publish,
           examMode, timeLimitMinutes, difficulty, curriculumUnitId, sharedInSchool,
+          aiGenerated,
         });
       }
       router.push(`/aufgaben`);
@@ -214,6 +216,7 @@ export function QuizEditor({ classes, topics, curriculum = [], task }: { classes
                 correctIndex: Math.max(0, Math.min(Number(q.correctIndex ?? 0), (q.options?.length ?? 1) - 1)),
                 explanation: q.explanation ? String(q.explanation) : "",
               })));
+              setAiGenerated(true); // ← Review-Pflicht aktivieren
             }
           }}
         />
