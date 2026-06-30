@@ -465,3 +465,28 @@ export const learningPredictions = sqliteTable("learning_predictions", {
   scoreError:   real("score_error"),
   scoreSubmit:  real("score_submit"),
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dev-Agent Task Queue (Orchestrator)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const agentTasks = sqliteTable("agent_tasks", {
+  id:                 text("id").primaryKey().$defaultFn(() => nanoid(12)),
+  createdAt:          integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt:          integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  type:               text("type", { enum: ["bugfix", "feature", "test", "review"] }).notNull(),
+  status:             text("status", { enum: ["pending", "in_progress", "success", "failed", "escalated"] }).notNull().default("pending"),
+  priority:           integer("priority").notNull().default(5),
+  title:              text("title").notNull(),
+  description:        text("description").notNull(),
+  affectedFiles:      text("affected_files"),
+  reproSteps:         text("repro_steps"),
+  branchName:         text("branch_name"),
+  prUrl:              text("pr_url"),
+  resultSummary:      text("result_summary"),
+  errorLog:           text("error_log"),
+  retries:            integer("retries").notNull().default(0),
+  maxRetries:         integer("max_retries").notNull().default(2),
+  submittedBy:        text("submitted_by"),
+  tokenCostMicroEur:  integer("token_cost_micro_eur").notNull().default(0),
+});
