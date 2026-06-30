@@ -290,8 +290,8 @@ export function FeedbackBoard({
             const responder = f.respondedBy ? userMap[f.respondedBy] : null;
             const myVote = myVoteSet.has(f.id);
             const votes = voteCount[f.id] ?? 0;
-            const canDelete = f.userId === myUserId || myRole === "teacher";
-            const isTeacher = myRole === "teacher";
+            const canDelete = f.userId === myUserId || myRole === "teacher" || myRole === "admin";
+            const isTeacher = myRole === "teacher" || myRole === "admin";
             return (
               <Card key={f.id}>
                 <div className="flex items-start gap-3">

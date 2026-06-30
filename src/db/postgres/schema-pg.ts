@@ -288,3 +288,15 @@ export const feedbackVotes = pgTable(
   },
   (t) => [primaryKey({ columns: [t.feedbackId, t.userId] })],
 );
+
+export const usageDays = pgTable(
+  "usage_days",
+  {
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    day: text("day").notNull(),
+    minutes: integer("minutes").notNull().default(0),
+    pings: integer("pings").notNull().default(0),
+    lastPingAt: ts("last_ping_at"),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
+);

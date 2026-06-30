@@ -15,7 +15,7 @@ export const schools = sqliteTable("schools", {
 export const users = sqliteTable("users", {
   id: id(),
   schoolId: text("school_id").notNull().references(() => schools.id),
-  role: text("role", { enum: ["teacher", "student"] }).notNull(),
+  role: text("role", { enum: ["teacher", "student", "admin"] }).notNull(),
   email: text("email").unique(),
   passwordHash: text("password_hash"),
   displayName: text("display_name").notNull(),
@@ -249,6 +249,20 @@ export const answers = sqliteTable("answers", {
   isAccepted: integer("is_accepted", { mode: "boolean" }).notNull().default(false),
   createdAt: ts("created_at").notNull(),
 });
+
+// ============ Nutzungs-Tracking (für Admin-Übersicht) ============
+
+export const usageDays = sqliteTable(
+  "usage_days",
+  {
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    day: text("day").notNull(), // "YYYY-MM-DD" lokal
+    minutes: integer("minutes").notNull().default(0),
+    pings: integer("pings").notNull().default(0),
+    lastPingAt: ts("last_ping_at"),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
+);
 
 // ============ Lehrplan (Curriculum) ============
 

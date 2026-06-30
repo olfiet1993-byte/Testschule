@@ -230,16 +230,25 @@ export function BibliothekClient({
               {item.body && (
                 <p className="text-xs text-slate-500 line-clamp-3 mb-2">{item.body}</p>
               )}
-              {item.url && (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener"
-                  className="text-xs text-sky-600 hover:underline truncate block mb-2"
-                >
-                  {item.url}
-                </a>
-              )}
+              {item.url && (() => {
+                const isLocal = item.url.startsWith("/uploads/");
+                // Lesbarer Dateiname aus dem lokalen Pfad (nanoid-Präfix abschneiden)
+                const fileName = isLocal
+                  ? decodeURIComponent(item.url.split("/").pop() || "").replace(/^[A-Za-z0-9_-]{6}-/, "")
+                  : item.url;
+                return (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener"
+                    {...(isLocal ? { download: fileName } : {})}
+                    className="inline-flex items-center gap-1 text-xs text-sky-600 hover:underline truncate max-w-full mb-2"
+                  >
+                    {isLocal ? "📎 " : "🔗 "}
+                    <span className="truncate">{isLocal ? fileName : item.url}</span>
+                  </a>
+                );
+              })()}
               {item.tags && (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {item.tags.split(",").map((t: string) => t.trim()).filter(Boolean).map((t: string) => (

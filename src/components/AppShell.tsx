@@ -2,6 +2,7 @@ import { Sidebar, MobileTopBar } from "./Sidebar";
 import { MobileTabBar } from "./MobileTabBar";
 import { FeedbackFab } from "./FeedbackFab";
 import { KlassenzimmerPanel } from "./KlassenzimmerPanel";
+import { UsageTracker } from "./UsageTracker";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <KlassenzimmerPanel />
       <FeedbackFab />
+      <UsageTracker />
     </div>
   );
 }

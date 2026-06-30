@@ -97,15 +97,15 @@ export function ClassQrCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 items-start">
-        <div className="bg-white p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center min-h-[200px]">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 items-start">
+        <div className="bg-white p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center min-h-[240px]">
           {svg ? (
             <div
-              className="w-44 h-44"
+              className="w-56 h-56 [&_svg]:w-full [&_svg]:h-full [&_svg]:block"
               dangerouslySetInnerHTML={{ __html: svg }}
             />
           ) : (
-            <div className="w-44 h-44 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+            <div className="w-56 h-56 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
           )}
         </div>
 

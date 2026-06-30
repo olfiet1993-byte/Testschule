@@ -27,6 +27,8 @@ const DEMO_EMAIL = "lehrer@demo.test";
 const DEMO_PASSWORD = "demo1234";
 const DEMO_CLASS_CODE = "DEMO01";
 const DEMO_CLASS_NAME = "Pflege Demo 24";
+const ADMIN_EMAIL = "admin@demo.test";
+const ADMIN_PASSWORD = "admin1234";
 
 async function main() {
   console.log("→ Demo-Seed läuft …\n");
@@ -60,6 +62,25 @@ async function main() {
     console.log("✓ Lehrkraft:", DEMO_EMAIL, "/", DEMO_PASSWORD);
   } else {
     console.log("· Lehrkraft existiert:", DEMO_EMAIL);
+  }
+
+  // 2b) Admin-Konto
+  let admin = await db.query.users.findFirst({ where: eq(schema.users.email, ADMIN_EMAIL) });
+  if (!admin) {
+    const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+    const [a] = await db.insert(schema.users).values({
+      schoolId: school.id,
+      role: "admin",
+      email: ADMIN_EMAIL,
+      passwordHash: hash,
+      displayName: "Admin",
+      avatarEmoji: "🛡️",
+      avatarColor: "#334155",
+    }).returning();
+    admin = a;
+    console.log("✓ Admin:", ADMIN_EMAIL, "/", ADMIN_PASSWORD);
+  } else {
+    console.log("· Admin existiert:", ADMIN_EMAIL);
   }
 
   // 3) Jahrgang

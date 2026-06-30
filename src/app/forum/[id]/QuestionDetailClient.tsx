@@ -22,7 +22,7 @@ export function QuestionDetailClient({
   author: any;
   answers: any[];
   currentUserId: string;
-  currentUserRole: "teacher" | "student";
+  currentUserRole: "teacher" | "student" | "admin";
 }) {
   const [pending, start] = useTransition();
   const [body, setBody] = useState("");

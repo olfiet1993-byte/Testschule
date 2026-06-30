@@ -13,7 +13,7 @@ async function user() {
   return session.user;
 }
 
-async function ensureClassAccess(userId: string, classId: string, role: "teacher" | "student") {
+async function ensureClassAccess(userId: string, classId: string, role: "teacher" | "student" | "admin") {
   if (role === "teacher") {
     const c = await db.query.classes.findFirst({
       where: and(eq(classes.id, classId), eq(classes.teacherId, userId)),

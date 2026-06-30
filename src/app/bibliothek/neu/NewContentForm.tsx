@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, Input, Label } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createContentItem } from "@/lib/actions/content";
-import { FileText, Image as ImageIcon, Link2, BookOpen, Video, FileIcon, ArrowLeft } from "lucide-react";
+import { FileText, Image as ImageIcon, Link2, BookOpen, Video, FileIcon, ArrowLeft, Upload } from "lucide-react";
 import Link from "next/link";
 
 const types = [
@@ -13,9 +13,77 @@ const types = [
   { value: "image", label: "Bild", icon: ImageIcon, hint: "Anatomie, OP-Besteck, Schema" },
   { value: "link", label: "Link", icon: Link2, hint: "Externe Quelle, Studie, Artikel" },
   { value: "term", label: "Fachbegriff", icon: BookOpen, hint: "Begriff + Definition (Karteikarten)" },
-  { value: "video", label: "Video", icon: Video, hint: "YouTube/Vimeo-URL" },
-  { value: "file", label: "Datei", icon: FileIcon, hint: "PDF, Dokument als Link" },
+  { value: "video", label: "Video", icon: Video, hint: "YouTube/Vimeo-Link oder lokale Datei" },
+  { value: "file", label: "Datei", icon: FileIcon, hint: "PDF, Dokument vom Rechner" },
 ] as const;
+
+// --- Wiederverwendbare Feld-Bausteine ---
+
+function FileField({
+  name,
+  label,
+  accept,
+  required,
+  hint,
+}: {
+  name: string;
+  label: string;
+  accept?: string;
+  required?: boolean;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <Label htmlFor={name} className="inline-flex items-center gap-1.5">
+        <Upload className="w-3.5 h-3.5 text-sky-500" /> {label}
+      </Label>
+      <input
+        id={name}
+        type="file"
+        name={name}
+        accept={accept}
+        required={required}
+        className="mt-1 block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-sky-600 file:text-white file:font-medium file:cursor-pointer hover:file:bg-sky-500 text-slate-500"
+      />
+      {hint && <p className="text-xs text-slate-500 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 text-xs text-slate-400">
+      <span className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+      oder
+      <span className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+    </div>
+  );
+}
+
+function BodyField({
+  label,
+  required,
+  rows = 2,
+}: {
+  label: string;
+  required?: boolean;
+  rows?: number;
+}) {
+  return (
+    <div>
+      <Label htmlFor="body">{label}</Label>
+      <textarea
+        id="body"
+        name="body"
+        rows={rows}
+        required={required}
+        className="w-full mt-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sm"
+      />
+    </div>
+  );
+}
+
+const ANY_FILE_HINT = "Alle gängigen Formate (PDF, Word, PowerPoint, Excel, Bilder, Audio, Video, ZIP …) — max. 50 MB.";
 
 export function NewContentForm() {
   const [type, setType] = useState<string>("text");
@@ -79,59 +147,85 @@ export function NewContentForm() {
             <Input id="title" name="title" required className="mt-1" />
           </div>
 
+          {/* TEXT / FACHBEGRIFF: Inhalt + optionaler lokaler Anhang */}
           {(type === "text" || type === "term") && (
-            <div>
-              <Label htmlFor="body">{type === "term" ? "Definition / Erklärung" : "Inhalt"}</Label>
-              <textarea
-                id="body"
-                name="body"
-                rows={5}
-                className="w-full mt-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sm"
-                required
-              />
-            </div>
-          )}
-
-          {type === "image" && (
             <>
-              <div>
-                <Label htmlFor="image">Bild-Datei (JPG/PNG)</Label>
-                <input
-                  id="image"
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  required
-                  className="mt-1 block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-sky-600 file:text-white hover:file:bg-sky-500"
-                />
-              </div>
-              <div>
-                <Label htmlFor="body">Beschreibung (optional)</Label>
-                <textarea
-                  id="body"
-                  name="body"
-                  rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sm"
-                />
-              </div>
+              <BodyField
+                label={type === "term" ? "Definition / Erklärung" : "Inhalt"}
+                required
+                rows={5}
+              />
+              <FileField
+                name="file"
+                label="Datei vom Rechner anhängen (optional)"
+                hint="z. B. Skript, Foto, PDF zum Begriff — alle Formate, max. 50 MB."
+              />
             </>
           )}
 
-          {(type === "link" || type === "video" || type === "file") && (
+          {/* BILD: lokaler Bild-Upload */}
+          {type === "image" && (
+            <>
+              <FileField
+                name="image"
+                label="Bild vom Rechner"
+                accept="image/*"
+                required
+                hint="JPG, PNG, GIF, WebP, SVG — max. 50 MB."
+              />
+              <BodyField label="Beschreibung (optional)" />
+            </>
+          )}
+
+          {/* LINK: URL ODER lokale Datei */}
+          {type === "link" && (
             <>
               <div>
                 <Label htmlFor="url">URL</Label>
-                <Input id="url" name="url" type="url" placeholder="https://…" required className="mt-1" />
+                <Input id="url" name="url" type="url" placeholder="https://…" className="mt-1" />
               </div>
+              <OrDivider />
+              <FileField
+                name="file"
+                label="Datei vom Rechner (statt Link)"
+                hint={ANY_FILE_HINT}
+              />
+              <BodyField label="Beschreibung (optional)" />
+            </>
+          )}
+
+          {/* VIDEO: URL ODER lokale Videodatei */}
+          {type === "video" && (
+            <>
               <div>
-                <Label htmlFor="body">Beschreibung (optional)</Label>
-                <textarea
-                  id="body"
-                  name="body"
-                  rows={2}
-                  className="w-full mt-1 px-3 py-2 rounded-lg border bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sm"
-                />
+                <Label htmlFor="url">Video-Link (YouTube / Vimeo)</Label>
+                <Input id="url" name="url" type="url" placeholder="https://…" className="mt-1" />
               </div>
+              <OrDivider />
+              <FileField
+                name="file"
+                label="Video vom Rechner hochladen"
+                accept="video/*"
+                hint="MP4, MOV, WebM, … — max. 50 MB."
+              />
+              <BodyField label="Beschreibung (optional)" />
+            </>
+          )}
+
+          {/* DATEI: lokaler Upload ODER Link */}
+          {type === "file" && (
+            <>
+              <FileField
+                name="file"
+                label="Datei hochladen"
+                hint={ANY_FILE_HINT}
+              />
+              <OrDivider />
+              <div>
+                <Label htmlFor="url">Link zur Datei (statt Upload)</Label>
+                <Input id="url" name="url" type="url" placeholder="https://…" className="mt-1" />
+              </div>
+              <BodyField label="Beschreibung (optional)" />
             </>
           )}
 

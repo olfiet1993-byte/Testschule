@@ -29,7 +29,8 @@ export const authConfig = {
       const isAuthed = !!auth?.user;
       if (path === "/login") {
         if (isAuthed) {
-          const target = (auth?.user as any)?.role === "teacher" ? "/dashboard" : "/sus";
+          const role = (auth?.user as any)?.role;
+          const target = role === "admin" ? "/admin" : role === "teacher" ? "/dashboard" : "/sus";
           return Response.redirect(new URL(target, request.nextUrl));
         }
         return true;
@@ -38,6 +39,7 @@ export const authConfig = {
       if (path === "/einladung") return true;
       if (path === "/anleitung") return true;
       if (path === "/tour") return true;
+      if (path.startsWith("/help")) return true;
       if (path === "/datenschutz") return true;
       return isAuthed;
     },
