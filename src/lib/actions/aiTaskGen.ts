@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { logTokenUsage, scrubPrompt } from "@/lib/ai/tokenLogger";
 
 type TaskType = "quiz" | "cloze" | "flashcards" | "case_study";
 
@@ -17,13 +18,18 @@ function parseClaudeJson(text: string): any {
   }
 }
 
-async function postClaude(body: any): Promise<string> {
+async function postClaude(
+  body: any,
+  meta?: { callType?: string; classId?: string | null }
+): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error(
       "Kein ANTHROPIC_API_KEY in .env.local. Lege die Variable an (claude.com/settings/keys), starte den Server neu und versuch es nochmal."
     );
   }
+  const model = body.model ?? "claude-haiku-4-5-20251001";
+  const startTime = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -31,18 +37,35 @@ async function postClaude(body: any): Promise<string> {
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
     },
-    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", ...body }),
+    body: JSON.stringify({ model, ...body }),
   });
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Claude-API-Fehler: ${res.status} ${errText.slice(0, 200)}`);
   }
   const data = await res.json();
+  const durationMs = Date.now() - startTime;
+  // Token-Logging fire-and-forget (blockiert nie den Request)
+  const inputTokens  = data?.usage?.input_tokens  ?? 0;
+  const outputTokens = data?.usage?.output_tokens ?? 0;
+  if (inputTokens > 0 || outputTokens > 0) {
+    import("@/lib/auth").then(({ auth }) =>
+      auth().then((session) => {
+        const teacherId = (session?.user as any)?.id;
+        if (teacherId) logTokenUsage({ teacherId, callType: meta?.callType ?? "unknown", model, inputTokens, outputTokens, classId: meta?.classId ?? null, durationMs });
+      })
+    );
+  }
   return data?.content?.[0]?.text ?? "";
 }
 
-async function callClaude(prompt: string, maxTokens = 2000): Promise<any> {
-  const text = await postClaude({ max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] });
+async function callClaude(
+  prompt: string,
+  maxTokens = 2000,
+  meta?: { callType?: string; classId?: string | null }
+): Promise<any> {
+  const { text: cleanPrompt } = scrubPrompt(prompt);
+  const text = await postClaude({ max_tokens: maxTokens, messages: [{ role: "user", content: cleanPrompt }] }, meta);
   return parseClaudeJson(text);
 }
 
@@ -112,7 +135,7 @@ export async function generateTaskWithAI(input: {
   if (!input.topic.trim()) throw new Error("Thema fehlt");
   const count = Math.min(Math.max(input.count ?? 5, 1), 10);
   const diff = input.difficulty ?? "mittel";
-  return await callClaude(PROMPTS[input.type](input.topic.trim(), count, diff));
+  return await callClaude(PROMPTS[input.type](input.topic.trim(), count, diff), 2000, { callType: "quiz_generate" });
 }
 
 /**
@@ -140,7 +163,7 @@ ${input.contentBody.trim()}
 ${basePrompt}
 
 WICHTIG: Verwende ausschließlich Informationen, die im Lerntext stehen. Keine Halluzinationen.`;
-  return await callClaude(prompt, 2500);
+  return await callClaude(prompt, 2500, { callType: "task_derive" });
 }
 
 /**
@@ -169,7 +192,7 @@ Erzeuge ${n} plausibel klingende, aber EINDEUTIG falsche Antworten. Sie sollen f
 
 Antwortformat: STRICT JSON, NUR JSON:
 {"distractors":["…","…","…"]}`;
-  return await callClaude(prompt, 800);
+  return await callClaude(prompt, 800, { callType: "distractors" });
 }
 
 /**
@@ -195,7 +218,7 @@ Antwortformat: STRICT JSON, NUR JSON:
 {"explanation":"…"}
 
 Stil: sachlich, prägnant, ohne Anreden („Sehr gut!" o. ä. weglassen).`;
-  return await callClaude(prompt, 500);
+  return await callClaude(prompt, 500, { callType: "explanation" });
 }
 
 /**
@@ -288,7 +311,7 @@ Erzeuge bis zu ${n} sinnvolle Alternativen. Beispiele:
 
 Antwortformat: STRICT JSON, NUR JSON:
 {"alternatives":["…","…"]}`;
-  return await callClaude(prompt, 500);
+  return await callClaude(prompt, 500, { callType: "cloze_alt" });
 }
 
 /**
@@ -314,7 +337,7 @@ Erzeuge genau 3 Optionen: 1 richtige + 2 plausible falsche. Jede Option soll ein
 
 Antwortformat: STRICT JSON, NUR JSON:
 {"options":[{"text":"…","feedback":"…","isCorrect":true},{"text":"…","feedback":"…","isCorrect":false},{"text":"…","feedback":"…","isCorrect":false}]}`;
-  return await callClaude(prompt, 1200);
+  return await callClaude(prompt, 1200, { callType: "case_options" });
 }
 
 /**
@@ -348,7 +371,7 @@ Wähle die passendste Einheit aus. Antwortformat STRICT JSON, NUR JSON:
 {"unitId":"<die id aus eckigen klammern>","reason":"<1 Satz Begründung>"}
 
 Falls keine wirklich passt, gib unitId: null zurück.`;
-  return await callClaude(prompt, 400);
+  return await callClaude(prompt, 400, { callType: "curriculum_suggest" });
 }
 
 /**
@@ -376,7 +399,7 @@ Wichtig:
 
 Antwortformat: STRICT JSON, NUR JSON:
 {"terms":[{"term":"…","definition":"…"}]}`;
-  return await callClaude(prompt, 2000);
+  return await callClaude(prompt, 2000, { callType: "glossary" });
 }
 
 export async function generateVitalScenarioWithAI(input: {
@@ -420,5 +443,5 @@ WICHTIG:
 - Norm-Bereiche: Puls 60-100, RR 100-140/60-90, AF 12-20, SpO2 >=95, Temp 36-37.5, consciousness=alert
 - pulse, systolic, diastolic, respRate, spo2 = ganze Zahlen
 - tempC = Dezimalzahl (z. B. 37.5)`;
-  return await callClaude(prompt, 1500);
+  return await callClaude(prompt, 1500, { callType: "vital" });
 }

@@ -417,3 +417,51 @@ export type Topic = typeof topics.$inferSelect;
 export type ContentItem = typeof contentItems.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Submission = typeof submissions.$inferSelect;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Token-Log & Analytics (DSGVO-konform)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const tokenLog = sqliteTable("token_log", {
+  id:           text("id").primaryKey().$defaultFn(() => nanoid(12)),
+  createdAt:    integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  teacherId:    text("teacher_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  callType:     text("call_type").notNull(),
+  model:        text("model").notNull(),
+  inputTokens:  integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  costMicroEur: integer("cost_micro_eur").notNull().default(0),
+  classId:      text("class_id").references(() => classes.id, { onDelete: "set null" }),
+  durationMs:   integer("duration_ms"),
+  // KEIN: prompt_text, response_text, student_ids (DSGVO Art. 5 lit. c)
+});
+
+export const dailyStats = sqliteTable("daily_stats", {
+  statDate:            text("stat_date").primaryKey(),
+  activeTeachers:      integer("active_teachers").notNull().default(0),
+  activeStudentsCount: integer("active_students_count").notNull().default(0),
+  tasksCreated:        integer("tasks_created").notNull().default(0),
+  tasksPublished:      integer("tasks_published").notNull().default(0),
+  submissionsCount:    integer("submissions_count").notNull().default(0),
+  aiCallsCount:        integer("ai_calls_count").notNull().default(0),
+  aiInputTokens:       integer("ai_input_tokens").notNull().default(0),
+  aiOutputTokens:      integer("ai_output_tokens").notNull().default(0),
+  aiCostMicroEur:      integer("ai_cost_micro_eur").notNull().default(0),
+  avgScorePercent:     real("avg_score_percent"),
+  createdAt:           integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+
+export const learningPredictions = sqliteTable("learning_predictions", {
+  id:           text("id").primaryKey().$defaultFn(() => nanoid(12)),
+  generatedAt:  integer("generated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  expiresAt:    integer("expires_at", { mode: "timestamp" }).notNull(),
+  classId:      text("class_id").notNull().references(() => classes.id, { onDelete: "cascade" }),
+  studentHash:  text("student_hash").notNull(),
+  topic:        text("topic").notNull(),
+  masteryScore: real("mastery_score").notNull(),
+  riskLevel:    text("risk_level", { enum: ["ok", "watch", "critical"] }).notNull(),
+  scoreQuiz:    real("score_quiz"),
+  scoreSm2:     real("score_sm2"),
+  scoreError:   real("score_error"),
+  scoreSubmit:  real("score_submit"),
+});
